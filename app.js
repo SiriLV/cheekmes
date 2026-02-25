@@ -4,12 +4,12 @@
 
 // ============ ЧАСТЬ 1: КОНФИГУРАЦИЯ ============
 const _tk = {
-    p1: 'ghp_QKhdgOHBH1q8So',
-    p2: '0a3cab58dd1981c'
+    p1: 'ghp_PVjUpSfERg15Km',
+    p2: 'H43JP5RdC0Nulrly3bNr6F'
 };
 const _gi = {
-    p1: '9863e70e547dd72136d8',
-    p2: 'wWp7M8CswKyf3hbx4JYCxg'
+    p1: '0a3cab58dd1981',
+    p2: 'cc74eee915fae5f346'
 };
 
 const GITHUB_TOKEN = _tk.p1 + _tk.p2;
