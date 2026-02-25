@@ -4,8 +4,8 @@
 
 // ============ ЧАСТЬ 1: КОНФИГУРАЦИЯ ============
 const _tk = {
-    p1: 'ghp_PVjUpSfERg15Km',
-    p2: 'H43JP5RdC0Nulrly3bNr6F'
+    p1: 'ghp_tJBCW17esk5d',
+    p2: '8LWbAnLwMfiFnwaA8k0cXjL9'
 };
 const _gi = {
     p1: '0a3cab58dd1981',
