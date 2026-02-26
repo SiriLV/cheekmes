@@ -4,12 +4,12 @@
 
 // ============ ЧАСТЬ 1: КОНФИГУРАЦИЯ-ТОКЕНЫ ============
 const _tk = {
-    p1: 'ghp_tJBCW17esk5d',
-    p2: '8LWbAnLwMfiFnwaA8k0cXjL9'
+    p1: 'github_token_part1',
+    p2: 'github_token_part2'
 };
 const _gi = {
-    p1: '0a3cab58dd1981',
-    p2: 'cc74eee915fae5f346'
+    p1: 'gist_token_part1',
+    p2: 'gist_token_part2'
 };
 
 const GITHUB_TOKEN = _tk.p1 + _tk.p2;
