@@ -1,8 +1,8 @@
 // ============================================================
-// CheekMes v5.0 =]
+// CheekMes v5.0 — app.js
 // ============================================================
 
-// ============ ЧАСТЬ 1: КОНФИГУРАЦИЯ ============
+// ============ ЧАСТЬ 1: КОНФИГУРАЦИЯ-ТОКЕНЫ ============
 const _tk = {
     p1: 'ghp_tJBCW17esk5d',
     p2: '8LWbAnLwMfiFnwaA8k0cXjL9'
@@ -335,7 +335,7 @@ async function doRegister() {
     const btn=document.getElementById('regBtn'); btnLoad(btn,true);
     try {
         const db=await loadUsersDB();
-        if (db[username]) { toast('Username уже занят!','error'); return; }
+        if (db[username]) { toast('Username уже занят!','error'); btnLoad(btn,false); return; }
         db[username]={username,displayName,passwordHash:sha(pass),bio:'',status:'online',avatar:null,createdAt:Date.now()};
         await saveUsersDB(db);
         toast('Аккаунт создан! Войдите.','success');
@@ -601,7 +601,7 @@ async function doJoin() {
     const btn=document.getElementById('joinModal')?.querySelector('.cta-btn'); btnLoad(btn,true);
     try {
         const dir=await loadDirectory();
-        const info=dir[id]; if (!info) { toast('Чат не найден','error'); return; }
+        const info=dir[id]; if (!info) { toast('Чат не найден','error'); btnLoad(btn,false); return; }
         S.chats.push({id,name:info.name,desc:info.desc||'',color:info.color||COLORS[0],key,fileName:info.fileName,admins:[info.createdBy],perms:{msg:true,files:true,voice:true},members:[],lastMsg:null,lastTime:null,isDM:false,pinned:null});
         saveLocalData(); renderChats();
         idI.value=''; keyI.value=''; hideModal('joinModal');
@@ -619,7 +619,7 @@ async function doNewDM() {
     const btn=document.getElementById('dmModal')?.querySelector('.cta-btn'); btnLoad(btn,true);
     try {
         const db=await loadUsersDB();
-        if (!db[target]) { toast('Пользователь не найден','error'); return; }
+        if (!db[target]) { toast('Пользователь не найден','error'); btnLoad(btn,false); return; }
         const pair=[S.user.username,target].sort();
         const dmHash=sha(pair.join('::'));
         const fileName='dm'+dmHash.substring(0,16)+'.txt';
@@ -780,8 +780,8 @@ function renderMsgs() {
     let lastUser = null;
     let lastTime = 0;
     const GROUP_TIME = 5 * 60 * 1000;
+
     S.msgs.forEach((msg, index) => {
-        // System messages
         if (msg.type==='system') {
             const sw=document.createElement('div'); sw.className='mw sys';
             sw.innerHTML=`<div class="m-bub sys-bub">${esc(msg.text)}</div>`;
@@ -790,7 +790,6 @@ function renderMsgs() {
             return;
         }
 
-        // Date divider
         if (msg.time) {
             const ds=new Date(msg.time).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
             if (ds!==lastDate) {
@@ -804,13 +803,12 @@ function renderMsgs() {
         const chat=S.chats[S.curChat];
         const isAdmin=chat&&(chat.admins||[]).includes(msg.user);
         
-        // Определяем, нужно ли показывать аватар и имя
         const isNewGroup = !lastUser || lastUser !== msg.user || (msg.time - lastTime) > GROUP_TIME;
+        
         const wrap=document.createElement('div');
         wrap.className='mw'+(isOwn?' own':'')+(isNewGroup?' new-group':' grouped');
         wrap.dataset.mid=msg.id;
 
-        // Avatar для чужих сообщений
         if (!isOwn && isNewGroup) {
             const avEl=document.createElement('div'); avEl.className='m-av';
             const cached=S.usersCache[msg.user]||{};
@@ -829,21 +827,20 @@ function renderMsgs() {
         bub.className='m-bub'+(msg.deleted?' del':'')+(msg.edited?' edited':'');
         bub.addEventListener('click',e=>{e.stopPropagation(); if(!msg.deleted) showRxPanel(msg,e);});
 
-        // Author
         if (!isOwn && isNewGroup && !msg.deleted && !chat?.isDM) {
             const auth=document.createElement('div'); auth.className='m-author';
-            auth.innerHTML=esc(msg.displayName||msg.user)+(isAdmin?' <span class="adm-badge">admin</span>':'');
+            auth.textContent=msg.displayName||msg.user;
+            if(isAdmin){const badge=document.createElement('span');badge.className='adm-badge';badge.textContent='admin';auth.appendChild(badge);}
             auth.onclick=e=>{e.stopPropagation(); showUserProfile(msg.user,msg.displayName||msg.user,msg.avatar||null,msg.bio||'');};
             bub.appendChild(auth);
         }
 
         if (msg.deleted) {
-            bub.innerHTML+='<span style="font-size:13px;opacity:.6">🚫 Сообщение удалено</span>';
+            const delSpan=document.createElement('span'); delSpan.style.cssText='font-size:13px;opacity:.6'; delSpan.textContent='🚫 Сообщение удалено';
+            bub.appendChild(delSpan);
         } else {
-            // Pin badge
-            if (chat?.pinned===msg.id) bub.innerHTML+='<span class="m-pin-badge">📌</span>';
+            if (chat?.pinned===msg.id) {const pinSpan=document.createElement('span');pinSpan.className='m-pin-badge';pinSpan.textContent='📌';bub.appendChild(pinSpan);}
 
-            // Reply
             if (msg.replyTo) {
                 const rd=document.createElement('div'); rd.className='m-reply';
                 rd.innerHTML=`<div class="m-reply-author">${esc(msg.replyTo.user||'')}</div><div class="m-reply-text">${esc(msg.replyTo.text||'📎')}</div>`;
@@ -851,7 +848,6 @@ function renderMsgs() {
                 bub.appendChild(rd);
             }
 
-            // Content
             if (msg.type==='file') {
                 bub.appendChild(buildFileBubble(msg));
             } else {
@@ -864,7 +860,6 @@ function renderMsgs() {
             }
         }
 
-        // Time
         if (msg.time&&!msg.deleted) {
             const td=document.createElement('div'); td.className='m-time';
             td.textContent=fmtFullTime(msg.time); 
@@ -873,7 +868,6 @@ function renderMsgs() {
 
         body.appendChild(bub);
 
-        // Reactions
         if (msg.reactions?.length&&!msg.deleted) {
             const rxDiv=document.createElement('div'); rxDiv.className='m-rxs';
             const grouped={};
@@ -888,7 +882,9 @@ function renderMsgs() {
             });
             body.appendChild(rxDiv);
         }
+
         wrap.appendChild(body);
+
         if (isOwn && isNewGroup) {
             const ownAv=document.createElement('div'); ownAv.className='m-av';
             setAv(ownAv, S.user.avatar, S.user.displayName, 28);
@@ -901,6 +897,7 @@ function renderMsgs() {
         }
 
         el.appendChild(wrap);
+        
         lastUser = msg.user;
         lastTime = msg.time;
     });
@@ -1122,7 +1119,7 @@ function insEm(emoji) {
 }
 function toggleEmoji() { document.getElementById('emojiPanel')?.classList.toggle('show'); }
 
-// ============ ЧАСТЬ 29: РЕАКЦИИ ============
+// ============ ЧАСТЬ 29: РЕАКЦИИ - ИСПРАВЛЕННЫЕ ============
 function showRxPanel(msg, event) {
     S.selMsg=msg;
     const panel=document.getElementById('rxPanel'); if (!panel) return;
@@ -1147,6 +1144,7 @@ function showRxPanel(msg, event) {
     if (top<6) top=rect.bottom+6;
     panel.style.left=left+'px'; panel.style.top=Math.max(6,top)+'px';
 }
+
 function hideRxPanel() { 
     document.getElementById('rxPanel')?.classList.remove('show'); 
     S.selMsg=null; 
@@ -1164,13 +1162,20 @@ async function doRx(emoji) {
 
 function doReplyAction() {
     if (!S.selMsg) return;
-    S.replyTo=S.selMsg; hideRxPanel();
+    const selMsgCopy = S.selMsg;
+    hideRxPanel();
+    
+    S.replyTo = selMsgCopy;
     const who=document.getElementById('replyAuthor'), what=document.getElementById('replyText');
-    if (who) who.textContent=S.selMsg.displayName||S.selMsg.user;
-    if (what) what.textContent=S.selMsg.type==='file'?'📎 '+S.selMsg.name:(S.selMsg.text||'').substring(0,80);
-    document.getElementById('replyBar').style.display='flex';
+    if (who) who.textContent=selMsgCopy.displayName||selMsgCopy.user;
+    if (what) what.textContent=selMsgCopy.type==='file'?'📎 '+selMsgCopy.name:(selMsgCopy.text||'').substring(0,80);
+    
+    const replyBar = document.getElementById('replyBar');
+    if (replyBar) replyBar.style.display='flex';
+    
     document.getElementById('msgInput')?.focus();
 }
+
 function cancelReply() { 
     S.replyTo=null; 
     const b=document.getElementById('replyBar'); 
@@ -1179,11 +1184,14 @@ function cancelReply() {
 
 function doEditAction() {
     if (!S.selMsg||S.selMsg.user!==S.user.username||S.selMsg.type==='file') return;
-    S.editMsg=S.selMsg; hideRxPanel();
+    const selMsgCopy = S.selMsg;
+    hideRxPanel();
+    S.editMsg = selMsgCopy;
     document.getElementById('editBar').style.display='flex';
     const ta=document.getElementById('msgInput');
-    if (ta) { ta.value=S.selMsg.text||''; ta.focus(); ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; }
+    if (ta) { ta.value=selMsgCopy.text||''; ta.focus(); ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; }
 }
+
 function cancelEdit() { 
     S.editMsg=null; 
     const b=document.getElementById('editBar'); 
@@ -1199,23 +1207,33 @@ function doCopyAction() {
 
 function doPinAction() {
     if (!S.selMsg||S.curChat===null) return;
+    const selMsgCopy = S.selMsg;
     const chat=S.chats[S.curChat];
     if (!(chat.admins||[]).includes(S.user.username)) { hideRxPanel(); return toast('Только администратор','error'); }
     hideRxPanel();
-    chat.pinned=(chat.pinned===S.selMsg.id)?null:S.selMsg.id;
+    chat.pinned=(chat.pinned===selMsgCopy.id)?null:selMsgCopy.id;
     saveLocalData(); updatePinnedBar(chat);
     toast(chat.pinned?'📌 Закреплено':'Откреплено','info');
 }
 
 async function doDeleteAction() {
     if (!S.selMsg||S.curChat===null) return;
+    const selMsgCopy = S.selMsg;
     const chat=S.chats[S.curChat];
     const isAdmin=(chat.admins||[]).includes(S.user.username);
-    const isOwn=S.selMsg.user===S.user.username;
+    const isOwn=selMsgCopy.user===S.user.username;
     if (!isOwn&&!isAdmin) { hideRxPanel(); return toast('Можно удалить только свои сообщения','error'); }
     hideRxPanel();
-    const msg=S.msgs.find(m=>m.id===S.selMsg.id); if (!msg) return;
-    msg.deleted=true; msg.text=''; delete msg.data; delete msg.name; msg.reactions=[];
+    
+    const msg=S.msgs.find(m=>m.id===selMsgCopy.id); 
+    if (!msg) return;
+    
+    msg.deleted=true; 
+    msg.text=''; 
+    delete msg.data; 
+    delete msg.name; 
+    msg.reactions=[];
+    
     if (chat.pinned===msg.id) { chat.pinned=null; updatePinnedBar(chat); }
     await rewriteAllMessages(chat);
     toast('Удалено','success');
@@ -1281,22 +1299,36 @@ function showChatInfo() {
     const title=document.getElementById('infoTitle'); if(title) title.textContent=chat.isDM?'ℹ️ Диалог':'ℹ️ О чате';
     const bodyEl=document.getElementById('infoBody'); if (!bodyEl) return;
 
-    let html=`<div class="profile-hero">`;
+    bodyEl.innerHTML='';
+    const heroDiv=document.createElement('div'); heroDiv.className='profile-hero';
     const avDiv=document.createElement('div'); avDiv.className='profile-hero-av';
     setAv(avDiv, null, chat.isDM?chat.dmWith:chat.name, 80);
-    bodyEl.innerHTML='';
-    const heroDiv=document.createElement('div'); heroDiv.className='profile-hero'; heroDiv.appendChild(avDiv);
-    heroDiv.innerHTML+=`<div class="profile-hero-name">${esc(chat.isDM?'@'+(chat.dmWith||''):chat.name)}</div><div class="profile-hero-uname">${chat.isDM?'Личный диалог':'Группа · '+chat.members.length+' участников'}</div>`;
+    heroDiv.appendChild(avDiv);
+    const nameDiv=document.createElement('div'); nameDiv.className='profile-hero-name';
+    nameDiv.textContent=chat.isDM?'@'+(chat.dmWith||''):chat.name;
+    const unameDiv=document.createElement('div'); unameDiv.className='profile-hero-uname';
+    unameDiv.textContent=chat.isDM?'Личный диалог':'Группа · '+chat.members.length+' участников';
+    heroDiv.appendChild(nameDiv); heroDiv.appendChild(unameDiv);
     bodyEl.appendChild(heroDiv);
 
-    let extra='';
-    if (!chat.isDM) extra+=`<div class="s-sec"><div class="chat-id-box"><code>${chat.id}</code><button class="btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${chat.id}');toast('Скопировано','success')" style="border-radius:7px;padding:5px 10px">📋</button></div></div>`;
-    if (chat.desc) extra+=`<div class="s-sec"><h4>Описание</h4><p style="font-size:13px;color:var(--t2);line-height:1.5">${esc(chat.desc)}</p></div>`;
-    extra+=`<div class="s-sec"><h4>Сообщений</h4><p style="font-size:13px;font-weight:600">${S.msgs.filter(m=>!m.deleted).length}</p></div>`;
+    if (!chat.isDM) {
+        const idSec=document.createElement('div'); idSec.className='s-sec';
+        idSec.innerHTML=`<div class="chat-id-box"><code>${chat.id}</code><button class="btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${chat.id}');toast('Скопировано','success')" style="border-radius:7px;padding:5px 10px">📋</button></div>`;
+        bodyEl.appendChild(idSec);
+    }
+    if (chat.desc) {
+        const descSec=document.createElement('div'); descSec.className='s-sec';
+        descSec.innerHTML=`<h4>Описание</h4><p style="font-size:13px;color:var(--t2);line-height:1.5">${esc(chat.desc)}</p>`;
+        bodyEl.appendChild(descSec);
+    }
+    const msgSec=document.createElement('div'); msgSec.className='s-sec';
+    msgSec.innerHTML=`<h4>Сообщений</h4><p style="font-size:13px;font-weight:600">${S.msgs.filter(m=>!m.deleted).length}</p>`;
+    bodyEl.appendChild(msgSec);
 
     const mkeys=Object.keys(memberMap);
     if (mkeys.length) {
-        extra+=`<div class="s-sec"><h4>Участники (${mkeys.length})</h4>`;
+        const memSec=document.createElement('div'); memSec.className='s-sec';
+        memSec.innerHTML=`<h4>Участники (${mkeys.length})</h4>`;
         mkeys.forEach(k=>{
             const m=memberMap[k], isAdm=admins.includes(m.user);
             const mc=document.createElement('div'); mc.className='member-card';
@@ -1304,11 +1336,10 @@ function showChatInfo() {
             setAv(mav, m.avatar||null, m.dn, 36);
             mc.appendChild(mav);
             mc.innerHTML+=`<div class="mc-info"><div class="mc-name">${esc(m.dn)}${isAdm?'<span class="adm-badge">admin</span>':''}</div><div class="mc-uname">@${esc(m.user)}</div>${m.bio?`<div class="mc-bio">${esc(m.bio)}</div>`:''}</div>`;
-            bodyEl.querySelector('.s-sec:last-child')?.appendChild(mc);
+            memSec.appendChild(mc);
         });
-        extra+='</div>';
+        bodyEl.appendChild(memSec);
     }
-    bodyEl.insertAdjacentHTML('beforeend', extra);
     showModal('chatInfoModal');
 }
 
@@ -1355,7 +1386,19 @@ function renderManageModal(chat) {
                 ?`<button onclick="rmAdm('${m}')" class="mc-btns" style="padding:4px 8px;font-size:10px;border-radius:7px;border:1px solid var(--brd);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">−admin</button>`
                 :`<button onclick="mkAdm('${m}')" style="padding:4px 8px;font-size:10px;border-radius:7px;border:1px solid var(--brd);background:transparent;color:var(--ac);cursor:pointer;font-family:inherit">+admin</button>`;
         }
-        mc.innerHTML+=`<div class="mc-info"><div class="mc-name">${esc(m)}${isAdm?'<span class="adm-badge">admin</span>':''}</div><div class="mc-uname">@${esc(m)}</div></div><div class="mc-btns">${btns}</div>`;
+        const infoDiv=document.createElement('div'); infoDiv.className='mc-info';
+        const nameDiv=document.createElement('div'); nameDiv.className='mc-name';
+        nameDiv.textContent=m; if(isAdm){const badge=document.createElement('span');badge.className='adm-badge';badge.textContent='admin';nameDiv.appendChild(badge);}
+        const unameDiv=document.createElement('div'); unameDiv.className='mc-uname'; unameDiv.textContent='@'+m;
+        infoDiv.appendChild(nameDiv); infoDiv.appendChild(unameDiv);
+        mc.appendChild(infoDiv);
+        const btnsDiv=document.createElement('div'); btnsDiv.className='mc-btns';
+        if(!isSelf){
+            const btn=document.createElement('button'); btn.textContent=isAdm?'−admin':'+admin';
+            btn.onclick=isAdm?()=>rmAdm(m):()=>mkAdm(m);
+            btnsDiv.appendChild(btn);
+        }
+        mc.appendChild(btnsDiv);
         secDiv.appendChild(mc);
     });
     bodyEl.appendChild(secDiv);
@@ -1443,17 +1486,27 @@ function showMyProfile() {
     const avEl=document.createElement('div'); avEl.className='profile-hero-av';
     setAv(avEl, S.user.avatar, S.user.displayName, 80);
     hero.appendChild(avEl);
-    hero.innerHTML+=`<div class="profile-hero-name">${esc(S.user.displayName)}</div><div class="profile-hero-uname">@${esc(S.user.username)}</div>`;
+    const nameDiv=document.createElement('div'); nameDiv.className='profile-hero-name'; nameDiv.textContent=S.user.displayName;
+    const unameDiv=document.createElement('div'); unameDiv.className='profile-hero-uname'; unameDiv.textContent='@'+S.user.username;
+    hero.appendChild(nameDiv); hero.appendChild(unameDiv);
     bodyEl.appendChild(hero);
 
-    bodyEl.innerHTML+=`
-        <div class="p-row"><span class="p-key">Имя</span><span class="p-val">${esc(S.user.displayName)}</span></div>
-        <div class="p-row"><span class="p-key">О себе</span><span class="p-val">${esc(S.user.bio||'—')}</span></div>
-        <div class="p-row"><span class="p-key">Статус</span><span class="p-val">${statusMap[S.user.status||'online']||'🟢'}</span></div>
-        <div class="p-row"><span class="p-key">Чатов</span><span class="p-val">${S.chats.filter(c=>!c.isDM).length}</span></div>
-        <div class="p-row"><span class="p-key">Диалогов</span><span class="p-val">${S.chats.filter(c=>c.isDM).length}</span></div>
-        <button class="cta-btn" onclick="hideModal('profileModal');showEditProfile()" style="margin-top:14px"><span class="btn-label">✏️ Редактировать профиль</span></button>
-    `;
+    const infoRows=[
+        {key:'Имя',val:S.user.displayName},
+        {key:'О себе',val:S.user.bio||'—'},
+        {key:'Статус',val:statusMap[S.user.status||'online']||'🟢'},
+        {key:'Чатов',val:S.chats.filter(c=>!c.isDM).length},
+        {key:'Диалогов',val:S.chats.filter(c=>c.isDM).length}
+    ];
+    infoRows.forEach(r=>{
+        const row=document.createElement('div'); row.className='p-row';
+        row.innerHTML=`<span class="p-key">${esc(r.key)}</span><span class="p-val">${esc(String(r.val))}</span>`;
+        bodyEl.appendChild(row);
+    });
+    const editBtn=document.createElement('button'); editBtn.className='cta-btn'; editBtn.style.marginTop='14px';
+    editBtn.innerHTML='<span class="btn-label">✏️ Редактировать профиль</span>';
+    editBtn.onclick=()=>{hideModal('profileModal');showEditProfile();};
+    bodyEl.appendChild(editBtn);
     showModal('profileModal');
 }
 
@@ -1517,9 +1570,13 @@ function showUserProfile(username, displayName, avatar, bio) {
     const avEl=document.createElement('div'); avEl.className='user-profile-av';
     setAv(avEl, avatar, displayName||username, 72);
     hero.appendChild(avEl);
-    hero.innerHTML+=`<div class="profile-hero-name">${esc(displayName||username)}</div><div class="profile-hero-uname">@${esc(username)}</div>`;
+    const nameDiv=document.createElement('div'); nameDiv.className='profile-hero-name'; nameDiv.textContent=displayName||username;
+    const unameDiv=document.createElement('div'); unameDiv.className='profile-hero-uname'; unameDiv.textContent='@'+username;
+    hero.appendChild(nameDiv); hero.appendChild(unameDiv);
     body.appendChild(hero);
-    body.innerHTML+=`<div class="p-row"><span class="p-key">О себе</span><span class="p-val">${esc(bio||'—')}</span></div>`;
+    const bioRow=document.createElement('div'); bioRow.className='p-row';
+    bioRow.innerHTML=`<span class="p-key">О себе</span><span class="p-val">${esc(bio||'—')}</span>`;
+    body.appendChild(bioRow);
     if (username!==S.user.username) {
         const btn=document.createElement('button'); btn.className='cta-btn'; btn.style.marginTop='14px';
         btn.innerHTML='<span class="btn-label">💬 Написать</span>';
@@ -1528,7 +1585,7 @@ function showUserProfile(username, displayName, avatar, bio) {
             if (S.chats.some(c=>c.isDM&&c.dmWith===username)) {
                 const idx=S.chats.findIndex(c=>c.isDM&&c.dmWith===username); openChat(idx);
             } else {
-                document.getElementById('dmTarget').value=username;
+                const dmTarget=document.getElementById('dmTarget'); if(dmTarget) dmTarget.value=username;
                 showModal('dmModal');
             }
         };
@@ -1536,7 +1593,6 @@ function showUserProfile(username, displayName, avatar, bio) {
     }
     showModal('userProfileModal');
 }
-
 
 // ============ ЧАСТЬ 33: НАСТРОЙКИ ============
 function loadSettings() {
