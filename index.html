@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru" data-theme="midnight" data-density="normal" data-blur="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080910">
+  <meta name="description" content="CheekMes — бета мессенджер">
+  <title>CheekMes</title>
+  <link rel="icon" href="icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <div id="loader" class="loader hidden">
+    <div class="spinner"></div>
+    <span id="loaderText">Загрузка…</span>
+  </div>
+  <div id="toastRoot" class="toast-root"></div>
+
+  <main id="authScreen" class="screen auth-screen active">
+    <div class="noise"></div>
+    <div class="scanline"></div>
+    <section class="auth-shell glass">
+      <header class="auth-head">
+        <img src="icon.png" class="brand-logo" alt="CheekMes">
+        <div class="brand-copy">
+          <h1>CheekMes</h1>
+          <p>Private messenger</p>
+        </div>
+        <button id="adminBtn" class="admin-entry" type="button" title="Admin">root</button>
+      </header>
+
+      <div class="node-status" id="apiNotice">Подключение…</div>
+
+      <div class="tabs" role="tablist">
+        <button id="loginTab" class="tab active" type="button">Войти</button>
+        <button id="registerTab" class="tab" type="button">Регистрация</button>
+      </div>
+
+      <form id="loginForm" class="auth-form active" autocomplete="on">
+        <label class="field">Username
+          <input id="loginUsername" autocomplete="username" spellcheck="false" placeholder="siright" required>
+        </label>
+        <label class="field">Пароль
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="ключ доступа" required>
+        </label>
+        <button class="primary big" type="submit">Войти</button>
+      </form>
+
+      <form id="registerForm" class="auth-form" autocomplete="off">
+        <label class="field">Username
+          <input id="regUsername" autocomplete="off" spellcheck="false" placeholder="a-z, 0-9, _" required>
+        </label>
+        <label class="field">Имя
+          <input id="regDisplayName" autocomplete="off" placeholder="Как вас показывать">
+        </label>
+        <label class="field">Пароль
+          <input id="regPassword" type="password" autocomplete="new-password" placeholder="минимум 10 символов" required>
+        </label>
+        <label class="field">Повтор
+          <input id="regPassword2" type="password" autocomplete="new-password" required>
+        </label>
+        <button class="primary big" type="submit">Создать аккаунт</button>
+      </form>
+    </section>
+  </main>
+
+  <main id="appScreen" class="screen app-screen">
+    <aside id="sidebar" class="sidebar glass">
+      <header class="topbar">
+        <button id="settingsBtn" class="me" type="button" title="Настройки">
+          <div id="meAvatar" class="avatar">?</div>
+          <div class="me-text">
+            <b id="meName">CheekMes</b>
+            <span id="meUsername">offline</span>
+          </div>
+        </button>
+        <div class="top-actions">
+          <button id="refreshBtn" class="icon-btn" type="button" title="Обновить">↻</button>
+          <button id="logoutBtn" class="icon-btn danger" type="button" title="Выйти">↩</button>
+        </div>
+      </header>
+
+      <div class="search-row">
+        <input id="chatSearch" placeholder="Поиск" spellcheck="false">
+      </div>
+
+      <div class="actions-row">
+        <button id="newDmBtn" type="button">ЛС</button>
+        <button id="newGroupBtn" type="button">Группа</button>
+        <button id="joinGroupBtn" type="button">Войти</button>
+      </div>
+
+      <section id="chatList" class="chat-list"></section>
+    </aside>
+
+    <section id="chatPane" class="chat-pane glass">
+      <header class="chat-header">
+        <button id="backBtn" class="icon-btn mobile-only" type="button">←</button>
+        <div class="chat-title">
+          <b id="chatName">Выберите чат</b>
+          <span id="chatMeta">готов к работе</span>
+        </div>
+        <button id="copyChatBtn" class="icon-btn" type="button" title="Скопировать">⧉</button>
+      </header>
+
+      <div id="messages" class="messages empty">
+        <div class="empty-state">
+          <img src="icon.png" alt="">
+          <h2>CheekMes</h2>
+          <p>Выберите чат или создайте новый</p>
+        </div>
+      </div>
+
+      <div id="fileBadge" class="file-badge hidden">
+        <span id="fileName"></span>
+        <button id="clearFileBtn" type="button">×</button>
+      </div>
+
+      <form id="composer" class="composer hidden">
+        <input id="fileInput" type="file" hidden>
+        <button id="fileBtn" type="button" class="icon-btn" title="Файл">＋</button>
+        <textarea id="msgInput" rows="1" placeholder="Сообщение…"></textarea>
+        <button id="sendBtn" type="submit" class="send-btn">➤</button>
+      </form>
+    </section>
+  </main>
+
+  <dialog id="dmDialog" class="modal">
+    <form method="dialog" class="modal-card glass" id="dmForm">
+      <header><h3>Новый диалог</h3><button value="cancel" type="submit">×</button></header>
+      <label class="field">Username<input id="dmUsername" placeholder="username" spellcheck="false"></label>
+      <footer><button value="cancel" type="submit" class="ghost">Отмена</button><button id="dmSubmit" type="button" class="primary">Начать</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="groupDialog" class="modal">
+    <form method="dialog" class="modal-card glass" id="groupForm">
+      <header><h3>Новая группа</h3><button value="cancel" type="submit">×</button></header>
+      <label class="field">Название<input id="groupNameInput" placeholder="Например: Dev chat"></label>
+      <footer><button value="cancel" type="submit" class="ghost">Отмена</button><button id="groupSubmit" type="button" class="primary">Создать</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="joinDialog" class="modal">
+    <form method="dialog" class="modal-card glass" id="joinForm">
+      <header><h3>Войти в группу</h3><button value="cancel" type="submit">×</button></header>
+      <label class="field">ID группы<input id="joinChatId" placeholder="grp_xxx"></label>
+      <label class="field">Ключ<input id="joinChatKey" placeholder="cmg_..."></label>
+      <footer><button value="cancel" type="submit" class="ghost">Отмена</button><button id="joinSubmit" type="button" class="primary">Войти</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="shareDialog" class="modal">
+    <form method="dialog" class="modal-card glass">
+      <header><h3>Приглашение</h3><button value="cancel" type="submit">×</button></header>
+      <label class="field">ID<input id="shareId" readonly></label>
+      <label class="field">Ключ<input id="shareKey" readonly></label>
+      <footer><button value="cancel" type="submit" class="ghost">Закрыть</button><button id="shareCopy" type="button" class="primary">Скопировать</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal">
+    <form method="dialog" class="modal-card settings-card glass">
+      <header><h3>Интерфейс</h3><button id="closeSettings" value="cancel" type="button">×</button></header>
+      <div class="settings-grid">
+        <label class="field">Тема
+          <select id="setTheme">
+            <option value="terminal">Terminal</option>
+            <option value="dark">Dark</option>
+            <option value="amoled">AMOLED</option>
+            <option value="light">Light</option>
+            <option value="nord">Nord</option>
+            <option value="midnight">Midnight</option>
+            <option value="sunset">Sunset</option>
+          </select>
+        </label>
+        <label class="field">Синхронизация
+          <select id="setSync">
+            <option value="25000">25 сек</option>
+            <option value="45000">45 сек</option>
+            <option value="90000">90 сек</option>
+            <option value="180000">3 мин</option>
+          </select>
+        </label>
+        <label class="field">Плотность
+          <select id="setDensity">
+            <option value="compact">Compact</option>
+            <option value="normal">Normal</option>
+            <option value="roomy">Roomy</option>
+          </select>
+        </label>
+        <label class="field">Скругление<input id="setRadius" type="range" min="6" max="28" step="1"></label>
+        <label class="field">Размер текста<input id="setFont" type="range" min="13" max="18" step="1"></label>
+      </div>
+      <div class="accent-grid">
+        <button type="button" class="accent-pick" data-a="#8b5cf6" data-b="#ec4899" style="--a:#8b5cf6;--b:#ec4899"></button>
+        <button type="button" class="accent-pick" data-a="#00d4ff" data-b="#2dd4bf" style="--a:#00d4ff;--b:#2dd4bf"></button>
+        <button type="button" class="accent-pick" data-a="#22c55e" data-b="#84cc16" style="--a:#22c55e;--b:#84cc16"></button>
+        <button type="button" class="accent-pick" data-a="#f43f5e" data-b="#fb923c" style="--a:#f43f5e;--b:#fb923c"></button>
+        <button type="button" class="accent-pick" data-a="#6366f1" data-b="#a855f7" style="--a:#6366f1;--b:#a855f7"></button>
+        <button type="button" class="accent-pick" data-a="#eab308" data-b="#f97316" style="--a:#eab308;--b:#f97316"></button>
+      </div>
+      <label class="check"><input id="setBlur" type="checkbox"> Blur</label>
+      <label class="check"><input id="setMotion" type="checkbox"> Анимации</label>
+      <div class="backup-row">
+        <button id="settingsExport" type="button" class="ghost">Экспорт backup</button>
+        <input id="settingsImport" type="file" accept="application/json" hidden>
+        <button id="settingsImportBtn" type="button" class="ghost">Импорт backup</button>
+      </div>
+      <footer><button id="resetSettings" type="button" class="ghost danger-text">Сброс</button><button id="saveSettings" type="button" class="primary">Сохранить</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="adminDialog" class="modal admin-modal">
+    <section class="modal-card admin-card glass">
+      <header>
+        <h3>Root panel</h3>
+        <button id="adminClose" type="button">×</button>
+      </header>
+      <form id="adminLoginForm" class="admin-login">
+        <label class="field">Login<input id="adminLogin" autocomplete="username" placeholder="SiriLV"></label>
+        <label class="field">Password<input id="adminPassword" type="password" autocomplete="current-password"></label>
+        <button class="primary" type="submit">Войти</button>
+      </form>
+      <section id="adminPanel" class="admin-panel hidden">
+        <div class="admin-toolbar">
+          <button id="adminRefresh" class="ghost" type="button">Обновить</button>
+          <button id="adminLogout" class="ghost danger-text" type="button">Выйти</button>
+        </div>
+        <div id="adminStats" class="admin-stats"></div>
+        <div class="admin-tabs">
+          <button type="button" class="admin-tab active" data-admin-tab="users">Пользователи</button>
+          <button type="button" class="admin-tab" data-admin-tab="chats">Чаты</button>
+          <button type="button" class="admin-tab" data-admin-tab="memory">Память</button>
+        </div>
+        <div id="adminContent" class="admin-content"></div>
+      </section>
+    </section>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

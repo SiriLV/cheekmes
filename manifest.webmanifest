@@ -1,0 +1,12 @@
+{
+  "name": "CheekMes",
+  "short_name": "CheekMes",
+  "description": "Private serverless messenger",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080910",
+  "theme_color": "#080910",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
