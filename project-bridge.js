@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const nav=document.createElement('nav');
   nav.className='slv-bridge';
   nav.setAttribute('aria-label','SiriLV projects');
-  nav.innerHTML='<a href="https://sirilv.github.io/">SiriLV OS</a><a href="https://sirilv.github.io/web/">Web IDE</a><a class="active" href="./">CheekMes</a>';
+  nav.innerHTML='<a href="https://sirilv.github.io/">SiriLV OS</a><a href="https://sirilv.github.io/web/">Web IDE</a><a class="active" href="https://sirilv.github.io/cheekmes/">CheekMes</a>';
   document.body.append(nav);
 });
 })();
